@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Valeur nette</title>
+<meta name="theme-color" content="#0d1520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Valeur nette">
+<meta name="robots" content="noindex, nofollow">
+<style>html,body{margin:0;background:#0d1520;min-height:100%;-webkit-text-size-adjust:100%}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #0d1520;
+    --panel: #151f2d;
+    --panel-2: #1b2735;
+    --line: #26344a;
+    --text: #e9eef6;
+    --muted: #8496ad;
+    --eur: #6f9cf0;
+    --cad: #e0a05a;
+    --pos: #46b98d;
+    --neg: #e0706a;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  .nw {
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--ink);
+    padding: 20px 16px 40px;
+    max-width: 780px;
+    margin: 0 auto;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .nw h1, .nw h2, .nw h3 { margin: 0; font-weight: 600; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* hero */
+  .hero { padding: 6px 0 22px; border-bottom: 1px solid var(--line); }
+  .hero-label { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+  .hero-value { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+  .hero-sub { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .hero-delta { font-size: 13px; margin-top: 6px; }
+  .up { color: var(--pos); } .down { color: var(--neg); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 13px;
+    padding: 6px 13px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); }
+  .rate { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+  .rate input {
+    width: 68px; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 6px; padding: 5px 7px; font: inherit; font-size: 13px; text-align: right;
+  }
+
+  /* groups */
+  .group { margin-top: 26px; }
+  .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .group-head h2 { font-size: 15px; }
+  .group-note { color: var(--muted); font-size: 12px; }
+  .group-total { color: var(--muted); font-size: 13px; }
+
+  .rows { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-meta { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot.EUR { background: var(--eur); } .dot.CAD { background: var(--cad); }
+  .amt {
+    width: 118px; background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 7px; padding: 8px 9px; font: inherit; font-size: 14px; text-align: right;
+  }
+  .amt:focus, .rate input:focus, select:focus, .add input:focus { outline: 2px solid var(--eur); outline-offset: 1px; }
+  .cur-tag { color: var(--muted); font-size: 12px; width: 26px; }
+  .del {
+    background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 17px;
+    padding: 2px 4px; line-height: 1; border-radius: 6px;
+  }
+  .del:hover { color: var(--neg); }
+  .empty { padding: 14px 12px; color: var(--muted); font-size: 13px; }
+
+  /* add */
+  .add { margin-top: 10px; display: none; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .add.open { display: flex; }
+  .add input[type=text] {
+    flex: 1; min-width: 130px; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 7px; padding: 8px 9px; font: inherit; font-size: 14px;
+  }
+  .add select {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 7px; padding: 8px 9px; font: inherit; font-size: 13px;
+  }
+  .btn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text); font: inherit; font-size: 13px;
+    padding: 7px 12px; border-radius: 7px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn-primary { background: var(--eur); border-color: var(--eur); color: #08111f; font-weight: 600; }
+  .link { background: none; border: 0; color: var(--eur); font: inherit; font-size: 13px; cursor: pointer; padding: 6px 0; }
+
+  /* split */
+  .split { margin-top: 10px; }
+  .bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--panel-2); }
+  .bar span { display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+
+  /* chart */
+  .chart-wrap {
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+    padding: 14px 12px 8px; margin-bottom: 10px;
+  }
+  .chart-wrap svg { display: block; width: 100%; height: auto; }
+  .chart-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .gridline { stroke: var(--line); stroke-width: 1; }
+  .axis-txt { fill: var(--muted); font-size: 9px; font-family: 'Archivo', sans-serif; }
+  .pt { fill: var(--ink); stroke: var(--eur); stroke-width: 2; }
+  .pt-last { fill: var(--eur); stroke: var(--eur); }
+
+  /* history */
+  .hist-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .hist-row:last-child { border-bottom: 0; }
+  .hist-date { color: var(--muted); font-size: 13px; }
+  .status { color: var(--muted); font-size: 12px; margin-top: 14px; min-height: 16px; }
+  #csvBox {
+    width: 100%; height: 150px; margin-top: 8px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 10px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5;
+    white-space: pre; overflow-x: auto; resize: vertical;
+  }
+  @media (max-width: 480px) {
+    .hero-value { font-size: 36px; }
+    .amt { width: 100px; }
+  }
+</style>
+
+</head>
+<body>
+<div class="nw">
+  <div class="hero">
+    <div class="hero-label">Valeur nette</div>
+    <div class="hero-value num" id="net">—</div>
+    <div class="hero-sub" id="netAlt"></div>
+    <div class="hero-delta" id="netDelta"></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Devise d'affichage">
+        <button id="curCAD" aria-pressed="true">CAD</button>
+        <button id="curEUR" aria-pressed="false">EUR</button>
+      </div>
+      <label class="rate">1 € = <input id="rate" class="num" type="number" step="0.001" inputmode="decimal"> CA$</label>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Comptes perso</h2>
+      <div class="group-total num" id="totPerso"></div>
+    </div>
+    <div class="rows" id="listPerso"></div>
+    <button class="link" data-add="perso">+ Ajouter un compte perso</button>
+    <div class="add" data-form="perso"></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Comptes communs</h2>
+      <div class="group-total num" id="totCommun"></div>
+    </div>
+    <div class="group-note">Comptés à 50 % dans la valeur nette.</div>
+    <div class="rows" id="listCommun" style="margin-top:8px"></div>
+    <button class="link" data-add="commun">+ Ajouter un compte commun</button>
+    <div class="add" data-form="commun"></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Dettes</h2>
+      <div class="group-total num" id="totDettes"></div>
+    </div>
+    <div class="rows" id="listDettes"></div>
+    <button class="link" data-add="dette">+ Ajouter une dette</button>
+    <div class="add" data-form="dette"></div>
+  </div>
+
+  <div class="group split">
+    <div class="group-head"><h2>Répartition</h2></div>
+    <div class="bar" id="barKind"></div>
+    <div class="legend" id="legKind"></div>
+    <div class="bar" id="barCur" style="margin-top:14px"></div>
+    <div class="legend" id="legCur"></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Historique</h2>
+      <button class="btn" id="snap">Enregistrer aujourd'hui</button>
+    </div>
+    <div id="chart"></div>
+    <div class="rows" id="hist"></div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Sauvegarde</h2>
+      <div>
+        <button class="btn" id="exp">Exporter en CSV</button>
+        <button class="btn" id="impToggle">Restaurer</button>
+      </div>
+    </div>
+    <div id="csvPanel" style="display:none">
+      <div class="group-note" id="csvNote"></div>
+      <textarea id="csvBox" spellcheck="false"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button class="btn" id="copyCsv">Copier</button>
+        <button class="btn btn-primary" id="doImport" style="display:none">Remplacer mes données</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+(function () {
+  const KEY = 'networth:v1';
+  const uid = () => Math.random().toString(36).slice(2, 9);
+
+  const DEFAULT = {
+    settings: { rate: 1.61, display: 'CAD' },
+    accounts: [
+      { id: uid(), name: 'Trade Republic', kind: 'invest', currency: 'EUR', owner: 'perso', amount: 0 },
+      { id: uid(), name: 'Trade Republic', kind: 'cash', currency: 'EUR', owner: 'perso', amount: 0 },
+      { id: uid(), name: 'KTB', kind: 'cash', currency: 'EUR', owner: 'perso', amount: 0 },
+      { id: uid(), name: 'Belfius', kind: 'cash', currency: 'EUR', owner: 'perso', amount: 0 },
+      { id: uid(), name: 'BNC', kind: 'cash', currency: 'CAD', owner: 'perso', amount: 0 },
+      { id: uid(), name: 'Belfius', kind: 'cash', currency: 'EUR', owner: 'commun', amount: 0 }
+    ],
+    history: []
+  };
+
+  let state = JSON.parse(JSON.stringify(DEFAULT));
+  const KIND_LABEL = { cash: 'Cash', invest: 'Investissements', dette: 'Dette' };
+
+  /* ---------- persistence ---------- */
+  let saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+        setStatus('Enregistré sur cet appareil · ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+      } catch (e) {
+        setStatus('Sauvegarde impossible (navigation privée ?). Exporte en CSV avant de fermer.');
+      }
+    }, 400);
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.accounts)) state = Object.assign({ history: [] }, parsed);
+      }
+    } catch (e) { /* première ouverture */ }
+    renderAll();
+  }
+  function setStatus(t) { document.getElementById('status').textContent = t; }
+
+  /* ---------- maths ---------- */
+  const rate = () => Number(state.settings.rate) || 1;
+  const toEur = a => a.currency === 'EUR' ? a.amount : a.amount / rate();
+  const show = eur => state.settings.display === 'EUR' ? eur : eur * rate();
+  function fmt(eurValue, decimals) {
+    const cur = state.settings.display;
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency', currency: cur,
+      minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
+    }).format(show(eurValue));
+  }
+  function sum(filter) {
+    return state.accounts.filter(filter).reduce((s, a) => s + toEur(a), 0);
+  }
+  function totals() {
+    const persoAssets = sum(a => a.owner === 'perso' && a.kind !== 'dette');
+    const communAssets = sum(a => a.owner === 'commun' && a.kind !== 'dette');
+    const persoDebt = sum(a => a.owner === 'perso' && a.kind === 'dette');
+    const communDebt = sum(a => a.owner === 'commun' && a.kind === 'dette');
+    const net = persoAssets - persoDebt + 0.5 * (communAssets - communDebt);
+    return { persoAssets, communAssets, persoDebt, communDebt, net };
+  }
+
+  /* ---------- rendering ---------- */
+  function accountRow(a) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const share = a.owner === 'commun' ? ' · 50 % = ' + fmt(toEur(a) / 2) : '';
+    row.innerHTML =
+      '<div class="row-main">' +
+        '<div class="row-name"></div>' +
+        '<div class="row-meta"><span class="dot ' + a.currency + '"></span><span class="meta-text"></span></div>' +
+      '</div>' +
+      '<input class="amt num" type="number" step="0.01" inputmode="decimal">' +
+      '<span class="cur-tag">' + (a.currency === 'EUR' ? '€' : 'CA$') + '</span>' +
+      '<button class="del" title="Supprimer" aria-label="Supprimer">×</button>';
+    row.querySelector('.row-name').textContent = a.name;
+    row.querySelector('.meta-text').textContent = KIND_LABEL[a.kind] + share;
+    const input = row.querySelector('.amt');
+    input.value = a.amount;
+    input.addEventListener('input', () => {
+      a.amount = parseFloat(input.value.replace(',', '.')) || 0;
+      renderTotals();
+      save();
+    });
+    row.querySelector('.del').addEventListener('click', () => {
+      state.accounts = state.accounts.filter(x => x.id !== a.id);
+      renderAll(); save();
+    });
+    return row;
+  }
+
+  function renderList(el, filter, emptyText) {
+    el.innerHTML = '';
+    const items = state.accounts.filter(filter);
+    if (!items.length) {
+      const d = document.createElement('div');
+      d.className = 'empty'; d.textContent = emptyText;
+      el.appendChild(d);
+      return;
+    }
+    items.forEach(a => el.appendChild(accountRow(a)));
+  }
+
+  function renderTotals() {
+    const t = totals();
+    document.getElementById('net').textContent = fmt(t.net);
+    const altRate = state.settings.display === 'EUR' ? rate() : 1 / rate();
+    const altCur = state.settings.display === 'EUR' ? 'CAD' : 'EUR';
+    document.getElementById('netAlt').textContent =
+      'soit ' + new Intl.NumberFormat('fr-FR', { style: 'currency', currency: altCur, maximumFractionDigits: 0 })
+        .format(show(t.net) * altRate);
+
+    const last = state.history[state.history.length - 1];
+    const dEl = document.getElementById('netDelta');
+    if (last) {
+      const diff = t.net - last.netEur;
+      dEl.className = 'hero-delta ' + (diff >= 0 ? 'up' : 'down');
+      dEl.textContent = (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff)).replace('-', '') +
+        ' depuis le ' + new Date(last.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    } else {
+      dEl.textContent = '';
+    }
+
+    document.getElementById('totPerso').textContent = fmt(t.persoAssets);
+    document.getElementById('totCommun').textContent =
+      fmt(t.communAssets) + '  →  ' + fmt(t.communAssets / 2) + ' retenus';
+    document.getElementById('totDettes').textContent =
+      (t.persoDebt + t.communDebt) ? '− ' + fmt(t.persoDebt + 0.5 * t.communDebt) + ' retenus' : 'Aucune';
+
+    renderSplit();
+  }
+
+  function renderSplit() {
+    const cash = sum(a => a.kind === 'cash') , inv = sum(a => a.kind === 'invest');
+    const eur = sum(a => a.kind !== 'dette' && a.currency === 'EUR');
+    const cad = sum(a => a.kind !== 'dette' && a.currency === 'CAD');
+    bar('barKind', 'legKind', [
+      { label: 'Cash', value: cash, color: 'var(--pos)' },
+      { label: 'Investissements', value: inv, color: 'var(--eur)' }
+    ]);
+    bar('barCur', 'legCur', [
+      { label: 'Euro', value: eur, color: 'var(--eur)' },
+      { label: 'Dollar canadien', value: cad, color: 'var(--cad)' }
+    ]);
+  }
+
+  function bar(barId, legId, parts) {
+    const total = parts.reduce((s, p) => s + Math.max(p.value, 0), 0) || 1;
+    const b = document.getElementById(barId); b.innerHTML = '';
+    const l = document.getElementById(legId); l.innerHTML = '';
+    parts.forEach(p => {
+      const pct = Math.max(p.value, 0) / total * 100;
+      const s = document.createElement('span');
+      s.style.width = pct + '%'; s.style.background = p.color;
+      b.appendChild(s);
+      const li = document.createElement('div');
+      li.innerHTML = '<i style="background:' + p.color + '"></i>';
+      li.append(p.label + ' · ' + fmt(p.value) + ' (' + Math.round(pct) + ' %)');
+      l.appendChild(li);
+    });
+  }
+
+  function renderChart() {
+    const c = document.getElementById('chart');
+    c.innerHTML = '';
+    const pts = state.history;
+    if (pts.length < 2) return;
+
+    const W = 600, H = 190, padL = 46, padR = 12, padT = 12, padB = 24;
+    const vals = pts.map(p => show(p.netEur));
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (min === max) { min -= 1; max += 1; }
+    const span = max - min;
+    min = Math.max(0, min - span * 0.15); max = max + span * 0.15;
+
+    const x = i => padL + (W - padL - padR) * (pts.length === 1 ? 0.5 : i / (pts.length - 1));
+    const y = v => padT + (H - padT - padB) * (1 - (v - min) / (max - min));
+
+    const shortCur = n => new Intl.NumberFormat('fr-FR', {
+      notation: 'compact', maximumFractionDigits: 1
+    }).format(n) + (state.settings.display === 'EUR' ? ' €' : ' $');
+
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Évolution de la valeur nette">';
+    for (let g = 0; g <= 3; g++) {
+      const v = min + (max - min) * g / 3, yy = y(v);
+      svg += '<line class="gridline" x1="' + padL + '" y1="' + yy + '" x2="' + (W - padR) + '" y2="' + yy + '"/>';
+      svg += '<text class="axis-txt" x="' + (padL - 6) + '" y="' + (yy + 3) + '" text-anchor="end">' + shortCur(v) + '</text>';
+    }
+    const line = vals.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    const area = line + ' L' + x(vals.length - 1).toFixed(1) + ' ' + (H - padB) + ' L' + x(0).toFixed(1) + ' ' + (H - padB) + ' Z';
+    svg += '<defs><linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">' +
+           '<stop offset="0%" stop-color="#6f9cf0" stop-opacity="0.28"/>' +
+           '<stop offset="100%" stop-color="#6f9cf0" stop-opacity="0"/></linearGradient></defs>';
+    svg += '<path d="' + area + '" fill="url(#nwGrad)"/>';
+    svg += '<path d="' + line + '" fill="none" stroke="#6f9cf0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    vals.forEach((v, i) => {
+      svg += '<circle class="pt' + (i === vals.length - 1 ? ' pt-last' : '') + '" cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3.5"><title>' +
+        new Date(pts[i].date).toLocaleDateString('fr-FR') + ' · ' + fmt(pts[i].netEur) + '</title></circle>';
+    });
+    const dLabel = d => new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+    svg += '<text class="axis-txt" x="' + padL + '" y="' + (H - 6) + '">' + dLabel(pts[0].date) + '</text>';
+    svg += '<text class="axis-txt" x="' + (W - padR) + '" y="' + (H - 6) + '" text-anchor="end">' + dLabel(pts[pts.length - 1].date) + '</text>';
+    svg += '</svg>';
+
+    const first = pts[0].netEur, last = pts[pts.length - 1].netEur, diff = last - first;
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-wrap';
+    wrap.innerHTML =
+      '<div class="chart-top"><span>' + pts.length + ' points enregistrés</span>' +
+      '<span class="' + (diff >= 0 ? 'up' : 'down') + '">' + (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff)) + ' depuis le premier point</span></div>' + svg;
+    c.appendChild(wrap);
+  }
+
+  function renderHistory() {
+    renderChart();
+    const el = document.getElementById('hist');
+    el.innerHTML = '';
+    if (!state.history.length) {
+      el.innerHTML = '<div class="empty">Enregistre un point chaque mois pour suivre l\'évolution.</div>';
+      return;
+    }
+    [...state.history].reverse().forEach((h, i, arr) => {
+      const prev = arr[i + 1];
+      const diff = prev ? h.netEur - prev.netEur : null;
+      const row = document.createElement('div');
+      row.className = 'hist-row';
+      const right = diff === null ? '' :
+        '<span class="' + (diff >= 0 ? 'up' : 'down') + '">' + (diff >= 0 ? '+' : '−') + fmt(Math.abs(diff)) + '</span>';
+      row.innerHTML =
+        '<span class="hist-date">' + new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + '</span>' +
+        '<span class="num">' + fmt(h.netEur) + ' &nbsp; ' + right +
+        ' <button class="del" title="Supprimer ce point" aria-label="Supprimer ce point">×</button></span>';
+      row.querySelector('.del').addEventListener('click', () => {
+        state.history = state.history.filter(p => p.date !== h.date);
+        renderAll(); save();
+      });
+      el.appendChild(row);
+    });
+  }
+
+  function renderAll() {
+    document.getElementById('rate').value = state.settings.rate;
+    document.getElementById('curEUR').setAttribute('aria-pressed', state.settings.display === 'EUR');
+    document.getElementById('curCAD').setAttribute('aria-pressed', state.settings.display === 'CAD');
+    renderList(document.getElementById('listPerso'), a => a.owner === 'perso' && a.kind !== 'dette', 'Aucun compte perso.');
+    renderList(document.getElementById('listCommun'), a => a.owner === 'commun' && a.kind !== 'dette', 'Aucun compte commun.');
+    renderList(document.getElementById('listDettes'), a => a.kind === 'dette', 'Aucune dette enregistrée.');
+    renderTotals();
+    renderHistory();
+  }
+
+  /* ---------- add forms ---------- */
+  function buildForm(kindTarget, container) {
+    container.innerHTML =
+      '<input type="text" placeholder="Nom (ex. Wealthsimple)">' +
+      (kindTarget === 'dette' ? '' :
+        '<select class="k"><option value="cash">Cash</option><option value="invest">Investissements</option></select>') +
+      '<select class="c"><option value="EUR">EUR</option><option value="CAD">CAD</option></select>' +
+      (kindTarget === 'dette' ?
+        '<select class="o"><option value="perso">Perso</option><option value="commun">Commun</option></select>' : '') +
+      '<input type="text" class="a num" placeholder="Montant" style="max-width:110px">' +
+      '<button class="btn btn-primary">Ajouter</button>';
+    container.querySelector('.btn').addEventListener('click', () => {
+      const name = container.querySelector('input[type=text]').value.trim();
+      if (!name) { container.querySelector('input[type=text]').focus(); return; }
+      state.accounts.push({
+        id: uid(),
+        name: name,
+        kind: kindTarget === 'dette' ? 'dette' : container.querySelector('.k').value,
+        currency: container.querySelector('.c').value,
+        owner: kindTarget === 'dette' ? container.querySelector('.o').value : kindTarget,
+        amount: parseFloat((container.querySelector('.a').value || '0').replace(',', '.')) || 0
+      });
+      container.classList.remove('open');
+      renderAll(); save();
+    });
+  }
+  document.querySelectorAll('[data-add]').forEach(btn => {
+    const target = btn.getAttribute('data-add');
+    const form = document.querySelector('[data-form="' + target + '"]');
+    buildForm(target, form);
+    btn.addEventListener('click', () => {
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) form.querySelector('input').focus();
+    });
+  });
+
+  /* ---------- controls ---------- */
+  document.getElementById('rate').addEventListener('input', e => {
+    state.settings.rate = parseFloat(e.target.value.replace(',', '.')) || 1;
+    renderAll(); save();
+  });
+  ['EUR', 'CAD'].forEach(c => {
+    document.getElementById('cur' + c).addEventListener('click', () => {
+      state.settings.display = c; renderAll(); save();
+    });
+  });
+  document.getElementById('snap').addEventListener('click', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const entry = { date: today, netEur: totals().net, rate: rate() };
+    const i = state.history.findIndex(h => h.date === today);
+    if (i >= 0) state.history[i] = entry; else state.history.push(entry);
+    state.history.sort((a, b) => a.date.localeCompare(b.date));
+    renderAll(); save();
+  });
+
+  /* ---------- export / import CSV ---------- */
+  const esc = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  function buildCsv() {
+    const rows = [['type', 'nom_ou_date', 'categorie', 'devise', 'proprietaire', 'montant', 'taux_eur_cad']];
+    state.accounts.forEach(a => rows.push(['compte', a.name, a.kind, a.currency, a.owner, a.amount, '']));
+    state.history.forEach(h => rows.push(['historique', h.date, '', 'EUR', '', h.netEur.toFixed(2), h.rate]));
+    rows.push(['reglage', 'taux', '', '', '', '', state.settings.rate]);
+    return rows.map(r => r.map(esc).join(',')).join('\n');
+  }
+  function parseCsv(text) {
+    const lines = text.trim().split(/\r?\n/).slice(1).filter(Boolean);
+    const accounts = [], history = [];
+    let rate = state.settings.rate;
+    lines.forEach(line => {
+      const c = [];
+      let cur = '', q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (q) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (ch === '"') q = false;
+          else cur += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === ',') { c.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      c.push(cur);
+      const n = v => parseFloat(String(v).replace(',', '.')) || 0;
+      if (c[0] === 'compte') accounts.push({ id: uid(), name: c[1], kind: c[2], currency: c[3], owner: c[4], amount: n(c[5]) });
+      else if (c[0] === 'historique') history.push({ date: c[1], netEur: n(c[5]), rate: n(c[6]) || rate });
+      else if (c[0] === 'reglage') rate = n(c[6]) || rate;
+    });
+    return { accounts, history, rate };
+  }
+
+  const panel = document.getElementById('csvPanel');
+  const box = document.getElementById('csvBox');
+  const note = document.getElementById('csvNote');
+  const impBtn = document.getElementById('doImport');
+
+  document.getElementById('exp').addEventListener('click', () => {
+    const csv = buildCsv();
+    panel.style.display = 'block';
+    impBtn.style.display = 'none';
+    box.value = csv;
+    box.readOnly = true;
+    note.textContent = 'Fichier téléchargé. Si le téléchargement est bloqué, copie le texte ci-dessous dans un fichier .csv.';
+    try {
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'valeur-nette-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      note.textContent = 'Téléchargement indisponible ici. Copie le texte ci-dessous dans un fichier .csv.';
+    }
+  });
+
+  document.getElementById('impToggle').addEventListener('click', () => {
+    const open = panel.style.display === 'block' && !box.readOnly;
+    panel.style.display = open ? 'none' : 'block';
+    box.readOnly = false;
+    box.value = '';
+    impBtn.style.display = 'inline-block';
+    note.textContent = 'Colle ici un export CSV. Tes comptes et ton historique actuels seront remplacés.';
+    box.focus();
+  });
+
+  document.getElementById('doImport').addEventListener('click', () => {
+    const parsed = parseCsv(box.value);
+    if (!parsed.accounts.length && !parsed.history.length) { note.textContent = 'Aucune ligne reconnue. Vérifie que tu as collé l\'export complet, en-tête comprise.'; return; }
+    state.accounts = parsed.accounts;
+    state.history = parsed.history.sort((a, b) => a.date.localeCompare(b.date));
+    state.settings.rate = parsed.rate;
+    panel.style.display = 'none';
+    renderAll(); save();
+    setStatus('Données restaurées : ' + parsed.accounts.length + ' comptes, ' + parsed.history.length + ' points d\'historique.');
+  });
+
+  document.getElementById('copyCsv').addEventListener('click', () => {
+    box.select();
+    try { document.execCommand('copy'); note.textContent = 'Copié.'; }
+    catch (e) { note.textContent = 'Sélectionne le texte et copie-le manuellement.'; }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
