@@ -317,11 +317,16 @@
     row.querySelector('.row-name').textContent = a.name;
     row.querySelector('.meta-text').textContent = KIND_LABEL[a.kind] + share;
     const input = row.querySelector('.amt');
-    input.value = a.amount;
+    input.value = a.amount === 0 ? '' : a.amount;
+    input.placeholder = '0';
+    input.addEventListener('focus', () => { input.select(); });
     input.addEventListener('input', () => {
       a.amount = parseFloat(input.value.replace(',', '.')) || 0;
       renderTotals();
       save();
+    });
+    input.addEventListener('blur', () => {
+      input.value = a.amount === 0 ? '' : a.amount;
     });
     row.querySelector('.del').addEventListener('click', () => {
       state.accounts = state.accounts.filter(x => x.id !== a.id);
